@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: testpod01
+  name: testpod01
+spec:
+  containers:
+  - image: mohitha28/rollingupdate:v1
+    name: testpod01
+
+
+
