@@ -1,0 +1,75 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: adapter-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: adapter-demo
+  template:
+    metadata:
+      labels:
+        app: adapter-demo
+    spec:
+      containers:
+
+      # 🔹 App container (produces data)
+      - name: app-container
+        image: busybox
+        command:
+        - sh
+        - -c
+        - |
+          while true; do
+            echo "hello from app container" >> /data/input.txt
+            sleep 5
+          done
+        volumeMounts:
+        - name: shared-data
+          mountPath: /data
+
+      # 🔹 Adapter container (transforms data → index.html)
+      - name: adapter-container
+        image: busybox
+        command:
+        - sh
+        - -c
+        - |
+          while true; do
+            if [ -f /data/input.txt ]; then
+              cat /data/input.txt | tr 'a-z' 'A-Z' > /data/index.html
+            fi
+            sleep 5
+          done
+        volumeMounts:
+        - name: shared-data
+          mountPath: /data
+
+      # 🔹 Web container (serves index.html)
+      - name: web-container
+        image: nginx
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: shared-data
+          mountPath: /usr/share/nginx/html
+
+      # 🔹 Shared volume
+      volumes:
+      - name: shared-data
+        emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: adapter-service
+spec:
+  type: NodePort
+  selector:
+    app: adapter-demo
+  ports:
+  - port: 80
+    targetPort: 80

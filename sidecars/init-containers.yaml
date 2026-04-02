@@ -1,0 +1,42 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: initContainers
+  name: initContainers
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: initContainers
+  template:
+    metadata:
+      labels:
+        app: initContainers
+    spec:
+      initContainers:
+      - name: init-myservice
+        image: busybox
+        command: ['sh', '-c', 'echo Init container running; sleep 5']
+      
+      containers:
+      - image: mohitha28/rollingupdate:v1
+        name: rollingupdate
+        ports:
+        - containerPort: 80
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: initContainers
+  name: initContainers
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: initContainers

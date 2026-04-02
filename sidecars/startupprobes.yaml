@@ -1,0 +1,121 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: startup-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: startup-demo
+  template:
+    metadata:
+      labels:
+        app: startup-demo
+    spec:
+      containers:
+      - name: app
+        image: nginx
+        ports:
+        - containerPort: 80
+
+        # 🔵 Startup Probe
+        startupProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - test -f /tmp/start
+          failureThreshold: 30
+          periodSeconds: 5
+
+        # 🔴 Liveness Probe
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - test -f /tmp/live
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: startup-service
+spec:
+  type: NodePort
+  selector:
+    app: startup-demo
+  ports:
+  - port: 80
+    targetPort: 80
+
+-----------------------------------------------------------------------
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: full-probe-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: full-probe-demo
+  template:
+    metadata:
+      labels:
+        app: full-probe-demo
+    spec:
+      containers:
+      - name: app
+        image: nginx
+        ports:
+        - containerPort: 80
+
+        # 🔵 STARTUP PROBE
+        startupProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - test -f /tmp/start
+          failureThreshold: 30
+          periodSeconds: 5
+
+        # 🟡 READINESS PROBE
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - test -f /tmp/ready
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
+        # 🔴 LIVENESS PROBE
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - test -f /tmp/live
+          initialDelaySeconds: 10
+          periodSeconds: 5
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: full-probe-service
+spec:
+  type: NodePort
+  selector:
+    app: full-probe-demo
+  ports:
+  - port: 80
+    targetPort: 80
+    
